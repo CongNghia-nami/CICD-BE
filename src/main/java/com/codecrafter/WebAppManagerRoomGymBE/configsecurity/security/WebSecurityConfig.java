@@ -71,19 +71,36 @@ public class WebSecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true);//cho phep client gửi thông tin xac thuc tuong tu nhu cookie or session
-            }
-        };
-    }
+    // @Bean
+    // public WebMvcConfigurer corsConfigurer() {
+    //     return new WebMvcConfigurer() {
+    //         @Override
+    //         public void addCorsMappings(CorsRegistry registry) {
+    //             registry.addMapping("/**")
+    //                     .allowedOrigins("http://3.106.38.243:3000")
+    //                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+    //                     .allowedHeaders("*")
+    //                     .allowCredentials(true);//cho phep client gửi thông tin xac thuc tuong tu nhu cookie or session
+    //         }
+    //     };
+    // }
+        @Bean
+        public WebMvcConfigurer corsConfigurer() {
+            return new WebMvcConfigurer() {
+                @Override
+                public void addCorsMappings(CorsRegistry registry) {
+                    registry.addMapping("/**")
+                            .allowedOrigins(
+                                "http://localhost:3000", 
+                                "http://3.106.38.243:3000", 
+                                "http://3.106.38.243:8085"
+                            )
+                            .allowedMethods("*")
+                            .allowedHeaders("*")
+                            .allowCredentials(true);
+                }
+            };
+        }
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
