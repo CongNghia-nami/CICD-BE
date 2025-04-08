@@ -84,23 +84,19 @@ public class WebSecurityConfig {
     //         }
     //     };
     // }
-        @Bean
+       @Bean
         public WebMvcConfigurer corsConfigurer() {
             return new WebMvcConfigurer() {
-                @Override
-                public void addCorsMappings(CorsRegistry registry) {
-                    registry.addMapping("/**")
-                            .allowedOrigins(
-                                "http://localhost:3000", 
-                                "http://3.106.38.243:3000", 
-                                "http://3.106.38.243:8085"
-                            )
-                            .allowedMethods("*")
-                            .allowedHeaders("*")
-                            .allowCredentials(true);
-                }
-            };
-        }
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                    .allowedOrigins("http://3.106.38.243:3000") // cho phép React FE gọi
+                    .allowedMethods("*")
+                    .allowedHeaders("*")
+                    .allowCredentials(true);
+            }
+        };
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
