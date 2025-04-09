@@ -90,7 +90,7 @@ public class WebSecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://3.106.38.243:3000") // cho phép React FE gọi
+                    .allowedOrigins("https://gymcity.nghia2801dt.fun") // cho phép React FE gọi
                     .allowedMethods("*")
                     .allowedHeaders("*")
                     .allowCredentials(true);
