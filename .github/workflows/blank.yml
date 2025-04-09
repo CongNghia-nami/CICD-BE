@@ -1,0 +1,70 @@
+name: Docker Build and Deploy (Java BE)
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted  # Dùng runner cá nhân
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Grant permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Docker image
+        run: |
+          docker build -t haianhx27/deploybe:${{ github.ref_name }}_${{ github.sha }} .
+
+      - name: Push Docker image
+        run: |
+          docker push haianhx27/deploybe:${{ github.ref_name }}_${{ github.sha }}
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Pull Docker image
+        run: |
+          docker pull haianhx27/deploybe:${{ github.ref_name }}_${{ github.sha }}
+
+      - name: Remove old container (if exists)
+        run: |
+          docker rm -f deploybe || true
+
+      - name: Run new container
+        run: |
+          docker run --name deploybe -dp 8085:8085 haianhx27/deploybe:${{ github.ref_name }}_${{ github.sha }}
+
+      - name: SSH vào EC2 để pull code nếu cần (tùy chọn)
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
+          chmod 600 ec2_key.pem
+
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem root@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /data/CICD-BE
+            git pull origin main
+          EOF
