@@ -1,18 +1,22 @@
-# Dockerfile
+# ---------- STAGE 1: Build app ----------
+FROM gradle:8.5-jdk17 AS builder
+WORKDIR /app
+
+# Copy toàn bộ project vào container
+COPY . .
+
+# Build project và tạo file .jar
+RUN gradle build -x test
+
+# ---------- STAGE 2: Runtime ----------
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# Copy toàn bộ source code vào image
-COPY . .
+# Copy file JAR từ stage build sang
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Build app bằng Gradle Wrapper
-RUN ./gradlew build -x test
-
-# Lấy file jar build ra từ thư mục build/libs
-RUN cp build/libs/*.jar app.jar
-
-# Expose port nếu app chạy trên 8085
+# Expose port ứng dụng (anh dùng 8085)
 EXPOSE 8085
 
-# Chạy file jar
+# Lệnh chạy ứng dụng
 CMD ["java", "-jar", "app.jar"]
