@@ -1,0 +1,55 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_TAG: "${CI_COMMIT_REF_NAME}_${CI_COMMIT_SHA}"
+  DOCKER_IMAGE: "haianhx27/deploybe:$IMAGE_TAG"
+
+# Giai đoạn build Docker image
+build:
+  stage: build
+  tags:
+    - self-hosted  # Runner có tag self-hosted
+  script:
+    - echo "==> Checkout code (đã có sẵn)"
+    - chmod +x ./gradlew
+    - echo "==> Đăng nhập Docker Hub"
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - echo "==> Build Docker image"
+    - docker build -t $DOCKER_IMAGE .
+    - echo "==> Push Docker image"
+    - docker push $DOCKER_IMAGE
+  only:
+    - tags
+    - main
+    - develop
+  when: on_success
+
+deploy:
+  stage: deploy
+  tags:
+    - self-hosted
+  needs:
+    - build
+  script:
+    - echo "==> Đăng nhập Docker Hub"
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - echo "==> Pull Docker image"
+    - docker pull $DOCKER_IMAGE
+    - echo "==> Stop & remove container cũ"
+    - docker rm -f deploybe || true
+    - echo "==> Run container mới"
+    - docker run --name deploybe -dp 8085:8085 $DOCKER_IMAGE
+    - echo "==> SSH vào EC2 để pull code nếu cần"
+    - |
+      echo "$EC2_SSH_KEY" > ec2_key.pem
+      chmod 600 ec2_key.pem
+      ssh -o StrictHostKeyChecking=no -i ec2_key.pem root@$EC2_HOST << 'EOF'
+        cd /data/CICD-BE
+        git pull origin main
+      EOF
+  only:
+    - tags
+    - main
+  when: on_success
